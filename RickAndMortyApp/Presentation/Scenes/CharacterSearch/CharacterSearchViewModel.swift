@@ -24,15 +24,15 @@ final class CharacterSearchViewModel {
     var query = ""
     private(set) var state: State = .idle
 
-    @ObservationIgnored private let repository: CharacterRepositoryContract
+    @ObservationIgnored private let useCase: SearchCharactersUseCaseContract
     @ObservationIgnored private let debounce: Duration
     @ObservationIgnored private(set) var searchTask: Task<Void, Never>?
 
     // MARK: - Methods
 
-    init(repository: CharacterRepositoryContract = CharacterRepository(),
+    init(useCase: SearchCharactersUseCaseContract = SearchCharactersUseCase(),
          debounce: Duration = .milliseconds(300)) {
-        self.repository = repository
+        self.useCase = useCase
         self.debounce = debounce
     }
 
@@ -49,10 +49,10 @@ final class CharacterSearchViewModel {
         }
 
         state = .loading
-        searchTask = Task { [repository, debounce] in
+        searchTask = Task { [useCase, debounce] in
             do {
                 try await Task.sleep(for: debounce)
-                let characters = try await repository.getCharacters(name)
+                let characters = try await useCase.execute(name: name)
                 try Task.checkCancellation()
                 state = characters.isEmpty ? .empty : .loaded(characters)
             } catch is CancellationError {
