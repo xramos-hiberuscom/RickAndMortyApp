@@ -55,13 +55,13 @@ private struct CharacterRow: View {
 
     var body: some View {
         HStack(spacing: DesignSystem.Spacing.m) {
-            AsyncImage(url: URL(string: character.image)) { image in
+            CachedAsyncImage(url: URL(string: character.image)) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
                 Color.secondary.opacity(DesignSystem.Opacity.placeholder)
             }
-            .frame(width: DesignSystem.Size.characterThumbnail,
-                   height: DesignSystem.Size.characterThumbnail)
+            .frame(width: DesignSystem.Size.m,
+                   height: DesignSystem.Size.m)
             .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.s))
 
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxs) {

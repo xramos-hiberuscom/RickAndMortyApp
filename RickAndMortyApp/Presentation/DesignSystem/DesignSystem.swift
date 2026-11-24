@@ -16,7 +16,7 @@ enum DesignSystem {
     }
 
     enum Size {
-        static let characterThumbnail: CGFloat = 56
+        static let m: CGFloat = 56
     }
 
     enum CornerRadius {
