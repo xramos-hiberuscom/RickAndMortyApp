@@ -68,6 +68,7 @@ private struct CharacterRow: View {
             .frame(width: DesignSystem.Size.m,
                    height: DesignSystem.Size.m)
             .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.s))
+            .roundedBorder(cornerRadius: DesignSystem.CornerRadius.s)
 
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxs) {
                 Text(character.name).font(.headline)

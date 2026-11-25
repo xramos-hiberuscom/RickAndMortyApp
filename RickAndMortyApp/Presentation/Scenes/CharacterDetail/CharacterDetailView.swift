@@ -70,9 +70,18 @@ private struct CharacterDetailContent: View {
                 .frame(width: DesignSystem.Size.xl,
                        height: DesignSystem.Size.xl)
                 .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.m))
+                .roundedBorder(cornerRadius: DesignSystem.CornerRadius.m)
 
                 VStack(spacing: DesignSystem.Spacing.m) {
-                    LabeledContent("Status", value: character.status.rawValue)
+                    LabeledContent("Status") {
+                        HStack(spacing: DesignSystem.Spacing.xs) {
+                            Circle()
+                                .fill(character.status.color)
+                                .frame(width: DesignSystem.Size.s,
+                                       height: DesignSystem.Size.s)
+                            Text(character.status.rawValue)
+                        }
+                    }
                     LabeledContent("Species", value: character.species)
                     LabeledContent("Gender", value: character.gender.rawValue)
                 }
