@@ -17,6 +17,8 @@ final class CharacterRepositoryMock: CharacterRepositoryContract {
         return try await withCheckedThrowingContinuation { pending[name] = $0 }
     }
 
+    func getCharacter(_ id: Int) async throws -> Character? { nil }
+
     func isPending(_ name: String) -> Bool { pending[name] != nil }
 
     func resolve(_ name: String, with result: Result<[Character], Error>) {
