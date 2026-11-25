@@ -18,6 +18,9 @@ struct CharacterSearchView: View {
         NavigationStack {
             content
                 .navigationTitle("Characters")
+                .navigationDestination(for: Int.self) { characterId in
+                    CharacterDetailView(characterId: characterId)
+                }
                 .searchable(text: $viewModel.query, prompt: "Search characters")
                 .onChange(of: viewModel.query) { _, newValue in
                     viewModel.search(newValue)
@@ -37,7 +40,9 @@ struct CharacterSearchView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .loaded(let characters):
             List(characters) { character in
-                CharacterRow(character: character)
+                NavigationLink(value: character.id) {
+                    CharacterRow(character: character)
+                }
             }
             .listStyle(.plain)
         case .empty:
