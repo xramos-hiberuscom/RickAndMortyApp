@@ -12,7 +12,7 @@ import SwiftUI
  */
 struct CharacterSearchView: View {
 
-    @State private var viewModel = CharacterSearchViewModel()
+    @State private var viewModel = CharacterSearchViewModel(useCase: AppEnvironment.searchCharactersUseCase)
 
     var body: some View {
         NavigationStack {
@@ -43,6 +43,7 @@ struct CharacterSearchView: View {
                 NavigationLink(value: character.id) {
                     CharacterRow(character: character)
                 }
+                .accessibilityIdentifier("character-row-\(character.id)")
             }
             .listStyle(.plain)
         case .empty:

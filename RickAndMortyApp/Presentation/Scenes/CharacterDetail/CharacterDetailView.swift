@@ -15,7 +15,8 @@ struct CharacterDetailView: View {
     @State private var viewModel: CharacterDetailViewModel
 
     init(characterId: Int) {
-        _viewModel = State(initialValue: CharacterDetailViewModel(characterId: characterId))
+        _viewModel = State(initialValue: CharacterDetailViewModel(characterId: characterId,
+                                                                  useCase: AppEnvironment.getCharacterUseCase))
     }
 
     init(viewModel: CharacterDetailViewModel) {
@@ -89,6 +90,7 @@ private struct CharacterDetailContent: View {
             }
             .padding(.vertical, DesignSystem.Spacing.l)
         }
+        .accessibilityIdentifier("character-detail")
     }
 }
 
