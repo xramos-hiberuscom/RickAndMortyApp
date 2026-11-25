@@ -40,18 +40,20 @@ struct CharacterDetailView: View {
         case .loading:
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityLabel(CharacterDetailA11y.loading)
         case .loaded(let character):
             CharacterDetailContent(character: character)
         case .notFound:
-            ContentUnavailableView("Character not found",
+            ContentUnavailableView(CharacterDetailLocalizable.notFound,
                                    systemImage: "person.crop.circle.badge.questionmark")
         case .error(let message):
             ContentUnavailableView {
-                Label("Something went wrong", systemImage: "exclamationmark.triangle")
+                Label(CharacterDetailLocalizable.error,
+                      systemImage: "exclamationmark.triangle")
             } description: {
                 Text(message)
             } actions: {
-                Button("Retry") { Task { await viewModel.load() } }
+                Button(CharacterDetailLocalizable.retry) { Task { await viewModel.load() } }
             }
         }
     }
@@ -72,25 +74,29 @@ private struct CharacterDetailContent: View {
                        height: DesignSystem.Size.xl)
                 .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.m))
                 .roundedBorder(cornerRadius: DesignSystem.CornerRadius.m)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(CharacterDetailA11y.photo(of: character.name))
+                .accessibilityAddTraits(.isImage)
 
                 VStack(spacing: DesignSystem.Spacing.m) {
-                    LabeledContent("Status") {
+                    LabeledContent(CharacterDetailLocalizable.status) {
                         HStack(spacing: DesignSystem.Spacing.xs) {
                             Circle()
                                 .fill(character.status.color)
                                 .frame(width: DesignSystem.Size.s,
                                        height: DesignSystem.Size.s)
+                                .accessibilityHidden(true)
                             Text(character.status.rawValue)
                         }
                     }
-                    LabeledContent("Species", value: character.species)
-                    LabeledContent("Gender", value: character.gender.rawValue)
+                    LabeledContent(CharacterDetailLocalizable.species, value: character.species)
+                    LabeledContent(CharacterDetailLocalizable.gender, value: character.gender.rawValue)
                 }
                 .padding(.horizontal, DesignSystem.Spacing.l)
             }
             .padding(.vertical, DesignSystem.Spacing.l)
         }
-        .accessibilityIdentifier("character-detail")
+        .accessibilityIdentifier(CharacterDetailA11y.identifier)
     }
 }
 
