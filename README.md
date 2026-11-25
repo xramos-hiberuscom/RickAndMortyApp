@@ -2,6 +2,11 @@
 
 SwiftUI app to search characters of *Rick and Morty* and see their detail. Runs on iOS, macOS and visionOS.
 
+<img width="300" src="https://github.com/user-attachments/assets/b436aae1-9a42-4705-9297-a5db5c7d13a6" />
+<img width="300" src="https://github.com/user-attachments/assets/a15681a7-8b1a-4120-89a3-7dda0a15f198" />
+<img width="300" src="https://github.com/user-attachments/assets/490e1662-7c2b-4141-a495-69a92d88c28e" />
+
+
 ## How to use the app
 
 1. Open `RickAndMortyApp.xcodeproj` in Xcode and run the `RickAndMortyApp` scheme. No API key or extra setup is needed.
