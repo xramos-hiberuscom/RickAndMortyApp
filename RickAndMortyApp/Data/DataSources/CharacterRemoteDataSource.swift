@@ -9,6 +9,7 @@ import Foundation
 
 protocol CharacterRemoteDataSourceContract {
     func getCharacters(_ name: String) async throws -> ServerArray<ServerCharacter>
+    func getCharacter(_ id: Int) async throws -> ServerCharacter
 }
 
 final class CharacterRemoteDataSource: CharacterRemoteDataSourceContract {
@@ -27,5 +28,10 @@ final class CharacterRemoteDataSource: CharacterRemoteDataSourceContract {
     /// Throws `NetworkError.notFound` when the API finds no matches (HTTP 404).
     func getCharacters(_ name: String) async throws -> ServerArray<ServerCharacter> {
         try await networkManager.perform(.characters(name: name))
+    }
+
+    /// Get Character by id: `GET /character/{id}`
+    func getCharacter(_ id: Int) async throws -> ServerCharacter {
+        try await networkManager.perform(.character(id: id))
     }
 }

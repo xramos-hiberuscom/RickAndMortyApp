@@ -18,7 +18,12 @@ struct CharacterSearchViewModelTests {
     }
 
     private func character(_ id: Int, _ name: String) -> Character {
-        Character(id: id, name: name, status: .alive, species: "Human", gender: .male, image: "")
+        Character(id: id,
+                  name: name,
+                  status: .alive,
+                  species: "Human",
+                  gender: .male,
+                  image: "")
     }
 
     private func waitUntil(_ condition: () -> Bool) async {

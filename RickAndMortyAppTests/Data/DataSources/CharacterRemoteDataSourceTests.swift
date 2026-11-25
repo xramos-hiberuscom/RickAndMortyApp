@@ -12,8 +12,12 @@ struct CharacterRemoteDataSourceTests {
 
     @Test func requestsCharacterFilterByName() async throws {
         let mock = NetworkManagerMock()
-        let character = ServerCharacter(id: 1, name: "Rick Sanchez", status: "Alive",
-                                        species: "Human", gender: "Male", image: "url")
+        let character = ServerCharacter(id: 1,
+                                        name: "Rick Sanchez",
+                                        status: "Alive",
+                                        species: "Human",
+                                        gender: "Male",
+                                        image: "url")
         mock.result = .success(ServerArray(info: ServerInformation(pages: 3), results: [character]))
         let sut = CharacterRemoteDataSource(networkManager: mock)
 

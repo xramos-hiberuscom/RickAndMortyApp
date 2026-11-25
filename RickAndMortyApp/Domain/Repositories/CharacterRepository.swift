@@ -9,6 +9,7 @@ import Foundation
 
 protocol CharacterRepositoryContract {
     func getCharacters(_ name: String) async throws -> [Character]
+    func getCharacter(_ id: Int) async throws -> Character?
 }
 
 final class CharacterRepository: CharacterRepositoryContract {
@@ -28,9 +29,18 @@ final class CharacterRepository: CharacterRepositoryContract {
     func getCharacters(_ name: String) async throws -> [Character] {
         do {
             let response = try await remoteDataSource.getCharacters(name)
-            return response.results.map { $0.convertToEntity() }
+            return response.results.map { $0.convertToModel() }
         } catch NetworkError.notFound {
             return []
+        }
+    }
+
+    /// Returns the character with the given `id`, or `nil` when it does not exist (HTTP 404).
+    func getCharacter(_ id: Int) async throws -> Character? {
+        do {
+            return try await remoteDataSource.getCharacter(id).convertToModel()
+        } catch NetworkError.notFound {
+            return nil
         }
     }
 }

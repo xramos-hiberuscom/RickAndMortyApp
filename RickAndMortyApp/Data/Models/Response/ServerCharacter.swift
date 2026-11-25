@@ -15,7 +15,7 @@ struct ServerCharacter: Codable {
     let gender: String
     let image: String
     
-    func convertToEntity() -> Character {
+    func convertToModel() -> Character {
         Character(id: id,
                   name: name,
                   status: CharacterStatus(rawValue: status) ?? .unknown,

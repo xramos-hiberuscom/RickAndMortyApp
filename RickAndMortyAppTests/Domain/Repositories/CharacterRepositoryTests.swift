@@ -17,8 +17,16 @@ struct CharacterRepositoryTests {
         sut = CharacterRepository(remoteDataSource: dataSource)
     }
 
-    private func serverCharacter(id: Int, name: String, status: String = "Alive", gender: String = "Male") -> ServerCharacter {
-        ServerCharacter(id: id, name: name, status: status, species: "Human", gender: gender, image: "url\(id)")
+    private func serverCharacter(id: Int,
+                                 name: String,
+                                 status: String = "Alive",
+                                 gender: String = "Male") -> ServerCharacter {
+        ServerCharacter(id: id,
+                        name: name,
+                        status: status,
+                        species: "Human",
+                        gender: gender,
+                        image: "url\(id)")
     }
 
     @Test func passesNameToDataSource() async throws {
@@ -36,8 +44,18 @@ struct CharacterRepositoryTests {
         let characters = try await sut.getCharacters("r")
 
         #expect(characters == [
-            Character(id: 1, name: "Rick Sanchez", status: .alive, species: "Human", gender: .male, image: "url1"),
-            Character(id: 2, name: "Birdperson", status: .dead, species: "Human", gender: .female, image: "url2")
+            Character(id: 1,
+                      name: "Rick Sanchez",
+                      status: .alive,
+                      species: "Human",
+                      gender: .male,
+                      image: "url1"),
+            Character(id: 2,
+                      name: "Birdperson",
+                      status: .dead,
+                      species: "Human",
+                      gender: .female,
+                      image: "url2")
         ])
     }
 
@@ -62,5 +80,37 @@ struct CharacterRepositoryTests {
     @Test func propagatesOtherErrors() async {
         dataSource.result = .failure(NetworkError.statusCode(500))
         await #expect(throws: NetworkError.statusCode(500)) { _ = try await sut.getCharacters("rick") }
+    }
+
+    // MARK: - getCharacter
+
+    @Test func getCharacterPassesIdToDataSource() async throws {
+        dataSource.characterResult = .success(serverCharacter(id: 7, name: "Rick"))
+        _ = try await sut.getCharacter(7)
+        #expect(dataSource.receivedId == 7)
+    }
+
+    @Test func getCharacterMapsToDomain() async throws {
+        dataSource.characterResult = .success(serverCharacter(id: 2, name: "Birdperson", status: "Dead", gender: "Female"))
+
+        let character = try await sut.getCharacter(2)
+
+        #expect(character == Character(id: 2,
+                                       name: "Birdperson",
+                                       status: .dead,
+                                       species: "Human",
+                                       gender: .female,
+                                       image: "url2"))
+    }
+
+    @Test func getCharacterReturnsNilWhenNotFound() async throws {
+        dataSource.characterResult = .failure(NetworkError.notFound)
+        let character = try await sut.getCharacter(99999)
+        #expect(character == nil)
+    }
+
+    @Test func getCharacterPropagatesOtherErrors() async {
+        dataSource.characterResult = .failure(NetworkError.statusCode(500))
+        await #expect(throws: NetworkError.statusCode(500)) { _ = try await sut.getCharacter(1) }
     }
 }

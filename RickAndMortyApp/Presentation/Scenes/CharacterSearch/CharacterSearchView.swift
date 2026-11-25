@@ -12,12 +12,15 @@ import SwiftUI
  */
 struct CharacterSearchView: View {
 
-    @State private var viewModel = CharacterSearchViewModel()
+    @State private var viewModel = CharacterSearchViewModel(useCase: AppEnvironment.searchCharactersUseCase)
 
     var body: some View {
         NavigationStack {
             content
                 .navigationTitle("Characters")
+                .navigationDestination(for: Int.self) { characterId in
+                    CharacterDetailView(characterId: characterId)
+                }
                 .searchable(text: $viewModel.query, prompt: "Search characters")
                 .onChange(of: viewModel.query) { _, newValue in
                     viewModel.search(newValue)
@@ -37,7 +40,10 @@ struct CharacterSearchView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .loaded(let characters):
             List(characters) { character in
-                CharacterRow(character: character)
+                NavigationLink(value: character.id) {
+                    CharacterRow(character: character)
+                }
+                .accessibilityIdentifier("character-row-\(character.id)")
             }
             .listStyle(.plain)
         case .empty:
@@ -63,6 +69,7 @@ private struct CharacterRow: View {
             .frame(width: DesignSystem.Size.m,
                    height: DesignSystem.Size.m)
             .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.s))
+            .roundedBorder(cornerRadius: DesignSystem.CornerRadius.s)
 
             VStack(alignment: .leading, spacing: DesignSystem.Spacing.xxs) {
                 Text(character.name).font(.headline)
