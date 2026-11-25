@@ -11,18 +11,21 @@ import Foundation
 /// When launched with `-UITesting` (Debug only) it provides deterministic stubs instead of the network.
 enum AppEnvironment {
 
+    /// Single repository instance, so its search cache lives as long as the app.
+    private static let characterRepository = CharacterRepository()
+
     static var searchCharactersUseCase: SearchCharactersUseCaseContract {
         #if DEBUG
         if isUITesting { return UITestSearchCharactersUseCase() }
         #endif
-        return SearchCharactersUseCase()
+        return SearchCharactersUseCase(repository: characterRepository)
     }
 
     static var getCharacterUseCase: GetCharacterUseCaseContract {
         #if DEBUG
         if isUITesting { return UITestGetCharacterUseCase() }
         #endif
-        return GetCharacterUseCase()
+        return GetCharacterUseCase(repository: characterRepository)
     }
 
     #if DEBUG
