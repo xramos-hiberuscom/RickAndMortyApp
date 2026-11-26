@@ -14,4 +14,6 @@ struct CharacterSearchLocalizable {
     static let unavailbleTitle = "Search characters"
     static let unavailableDescription = "Type a name to find Rick and Morty characters."
     static let error = "Something went wrong"
+    static let loadMoreError = "Couldn't load more characters."
+    static let retry = "Retry"
 }

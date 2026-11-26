@@ -44,6 +44,25 @@ struct CharacterSearchView: View {
     }
 
     @ViewBuilder
+    private var paginationFooter: some View {
+        if viewModel.isLoadingMore {
+            ProgressView()
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel(CharacterSearchA11y.loadingMore)
+                .accessibilityIdentifier(CharacterSearchA11y.loadingMoreIdentifier)
+        } else if viewModel.loadMoreFailed && viewModel.canLoadMore {
+            VStack(spacing: DesignSystem.Spacing.xs) {
+                Text(CharacterSearchLocalizable.loadMoreError)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Button(CharacterSearchLocalizable.retry) { viewModel.loadMore() }
+                    .accessibilityIdentifier(CharacterSearchA11y.retryIdentifier)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
     private var content: some View {
         switch viewModel.state {
         case .idle:
@@ -55,12 +74,16 @@ struct CharacterSearchView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityLabel(CharacterSearchA11y.loading)
         case .loaded(let characters):
-            List(characters) { character in
-                NavigationLink(value: character.id) {
-                    CharacterRow(character: character)
+            List {
+                ForEach(characters) { character in
+                    NavigationLink(value: character.id) {
+                        CharacterRow(character: character)
+                    }
+                    .accessibilityIdentifier(CharacterSearchA11y.identifier(of: character.id))
+                    .accessibilityHint(CharacterSearchA11y.rowHint)
+                    .onAppear { viewModel.loadMoreIfNeeded(after: character) }
                 }
-                .accessibilityIdentifier(CharacterSearchA11y.identifier(of: character.id))
-                .accessibilityHint(CharacterSearchA11y.rowHint)
+                paginationFooter
             }
             .listStyle(.plain)
         case .empty:

@@ -21,10 +21,10 @@ struct CharacterRemoteDataSourceTests {
         mock.result = .success(ServerArray(info: ServerInformation(pages: 3), results: [character]))
         let sut = CharacterRemoteDataSource(networkManager: mock)
 
-        let response = try await sut.getCharacters("rick")
+        let response = try await sut.getCharacters("rick", page: 1)
 
         let url = try mock.receivedEndpoint?.urlRequest().url?.absoluteString
-        #expect(url == "https://rickandmortyapi.com/api/character?name=rick")
+        #expect(url == "https://rickandmortyapi.com/api/character?name=rick&page=1")
         #expect(response.results.first?.name == "Rick Sanchez")
         #expect(response.info.pages == 3)
     }
@@ -34,6 +34,6 @@ struct CharacterRemoteDataSourceTests {
         mock.result = .failure(.notFound)
         let sut = CharacterRemoteDataSource(networkManager: mock)
 
-        await #expect(throws: NetworkError.notFound) { _ = try await sut.getCharacters("zzzz") }
+        await #expect(throws: NetworkError.notFound) { _ = try await sut.getCharacters("zzzz", page: 1) }
     }
 }

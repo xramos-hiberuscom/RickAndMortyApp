@@ -8,7 +8,7 @@
 import Foundation
 
 protocol SearchCharactersUseCaseContract {
-    func execute(name: String) async throws -> [Character]
+    func execute(name: String, page: Int) async throws -> CharactersPage
 }
 
 final class SearchCharactersUseCase: SearchCharactersUseCaseContract {
@@ -18,7 +18,7 @@ final class SearchCharactersUseCase: SearchCharactersUseCaseContract {
         self.repository = repository
     }
     
-    func execute(name: String) async throws -> [Character] {
-        try await repository.getCharacters(name)
+    func execute(name: String, page: Int) async throws -> CharactersPage {
+        try await repository.getCharacters(name, page: page)
     }
 }
