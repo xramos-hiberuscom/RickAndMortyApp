@@ -34,7 +34,7 @@ struct CharacterRepositoryTests {
     }
 
     @Test func passesNameToDataSource() async throws {
-        _ = try await sut.getCharacters("rick")
+        _ = try await sut.getCharacters("rick", page: 1).characters
         #expect(dataSource.receivedName == "rick")
     }
 
@@ -45,7 +45,7 @@ struct CharacterRepositoryTests {
                       serverCharacter(id: 2, name: "Birdperson", status: "Dead", gender: "Female")]
         ))
 
-        let characters = try await sut.getCharacters("r")
+        let characters = try await sut.getCharacters("r", page: 1).characters
 
         #expect(characters == [
             Character(id: 1,
@@ -69,7 +69,7 @@ struct CharacterRepositoryTests {
             results: [serverCharacter(id: 3, name: "Mystery", status: "???", gender: "???")]
         ))
 
-        let character = try #require(try await sut.getCharacters("m").first)
+        let character = try #require(try await sut.getCharacters("m", page: 1).characters.first)
 
         #expect(character.status == .unknown)
         #expect(character.gender == .unknown)
@@ -77,13 +77,13 @@ struct CharacterRepositoryTests {
 
     @Test func returnsEmptyListWhenNothingFound() async throws {
         dataSource.result = .failure(NetworkError.notFound)
-        let characters = try await sut.getCharacters("zzzz")
+        let characters = try await sut.getCharacters("zzzz", page: 1).characters
         #expect(characters.isEmpty)
     }
 
     @Test func propagatesOtherErrors() async {
         dataSource.result = .failure(NetworkError.statusCode(500))
-        await #expect(throws: NetworkError.statusCode(500)) { _ = try await sut.getCharacters("rick") }
+        await #expect(throws: NetworkError.statusCode(500)) { _ = try await sut.getCharacters("rick", page: 1).characters }
     }
 
     // MARK: - getCharacter
@@ -133,10 +133,10 @@ struct CharacterRepositoryTests {
 
     @Test func validCachedResultIsReturnedWithoutNetworkCall() async throws {
         stubSearchResult("Rick")
-        let first = try await sut.getCharacters("rick")
+        let first = try await sut.getCharacters("rick", page: 1).characters
 
         clock.advance(by: 119)
-        let second = try await sut.getCharacters("rick")
+        let second = try await sut.getCharacters("rick", page: 1).characters
 
         #expect(dataSource.getCharactersCallCount == 1)
         #expect(second == first)
@@ -144,27 +144,27 @@ struct CharacterRepositoryTests {
 
     @Test func expiredCacheFetchesFromNetworkAndUpdatesCache() async throws {
         stubSearchResult("Rick")
-        _ = try await sut.getCharacters("rick")
+        _ = try await sut.getCharacters("rick", page: 1).characters
 
         clock.advance(by: 120)
         stubSearchResult("Rick Sanchez")
-        let refreshed = try await sut.getCharacters("rick")
+        let refreshed = try await sut.getCharacters("rick", page: 1).characters
 
         #expect(dataSource.getCharactersCallCount == 2)
         #expect(refreshed.map(\.name) == ["Rick Sanchez"])
 
         // The refreshed value is cached again, with a new expiration time.
         clock.advance(by: 60)
-        let cached = try await sut.getCharacters("rick")
+        let cached = try await sut.getCharacters("rick", page: 1).characters
         #expect(dataSource.getCharactersCallCount == 2)
         #expect(cached.map(\.name) == ["Rick Sanchez"])
     }
 
     @Test func differentQueriesAreCachedIndependently() async throws {
         stubSearchResult("Rick")
-        _ = try await sut.getCharacters("rick")
+        _ = try await sut.getCharacters("rick", page: 1).characters
         stubSearchResult("Morty")
-        let morty = try await sut.getCharacters("morty")
+        let morty = try await sut.getCharacters("morty", page: 1).characters
 
         #expect(dataSource.getCharactersCallCount == 2)
         #expect(morty.map(\.name) == ["Morty"])
@@ -172,16 +172,16 @@ struct CharacterRepositoryTests {
 
     @Test func queryIsNormalizedForCacheLookup() async throws {
         stubSearchResult("Rick")
-        _ = try await sut.getCharacters("rick")
-        _ = try await sut.getCharacters("  RICK ")
+        _ = try await sut.getCharacters("rick", page: 1).characters
+        _ = try await sut.getCharacters("  RICK ", page: 1).characters
 
         #expect(dataSource.getCharactersCallCount == 1)
     }
 
     @Test func emptyResultsAreCached() async throws {
         dataSource.result = .failure(NetworkError.notFound)
-        _ = try await sut.getCharacters("zzzz")
-        let second = try await sut.getCharacters("zzzz")
+        _ = try await sut.getCharacters("zzzz", page: 1).characters
+        let second = try await sut.getCharacters("zzzz", page: 1).characters
 
         #expect(second.isEmpty)
         #expect(dataSource.getCharactersCallCount == 1)
@@ -189,12 +189,60 @@ struct CharacterRepositoryTests {
 
     @Test func failuresAreNotCached() async throws {
         dataSource.result = .failure(NetworkError.statusCode(500))
-        await #expect(throws: NetworkError.statusCode(500)) { _ = try await sut.getCharacters("rick") }
+        await #expect(throws: NetworkError.statusCode(500)) { _ = try await sut.getCharacters("rick", page: 1).characters }
 
         stubSearchResult("Rick")
-        let characters = try await sut.getCharacters("rick")
+        let characters = try await sut.getCharacters("rick", page: 1).characters
 
         #expect(dataSource.getCharactersCallCount == 2)
         #expect(characters.map(\.name) == ["Rick"])
+    }
+
+    // MARK: - Pagination
+
+    @Test func requestsTheGivenPage() async throws {
+        dataSource.result = .success(ServerArray(info: ServerInformation(pages: 3), results: []))
+
+        _ = try await sut.getCharacters("rick", page: 2)
+
+        #expect(dataSource.receivedPages == [2])
+    }
+
+    @Test func reportsNextPageWhileThereAreMorePages() async throws {
+        dataSource.result = .success(ServerArray(info: ServerInformation(pages: 3),
+                                                 results: [serverCharacter(id: 1, name: "Rick")]))
+
+        let page = try await sut.getCharacters("rick", page: 2)
+
+        #expect(page.page == 2)
+        #expect(page.hasNextPage)
+    }
+
+    @Test func lastPageHasNoNextPage() async throws {
+        dataSource.result = .success(ServerArray(info: ServerInformation(pages: 3), results: []))
+
+        let page = try await sut.getCharacters("rick", page: 3)
+
+        #expect(!page.hasNextPage)
+    }
+
+    @Test func notFoundPageIsEmptyWithoutNextPage() async throws {
+        dataSource.result = .failure(NetworkError.notFound)
+
+        let page = try await sut.getCharacters("zzzz", page: 2)
+
+        #expect(page == CharactersPage(characters: [], page: 2, hasNextPage: false))
+    }
+
+    @Test func eachPageIsCachedSeparately() async throws {
+        dataSource.result = .success(ServerArray(info: ServerInformation(pages: 3), results: []))
+
+        _ = try await sut.getCharacters("rick", page: 1)
+        _ = try await sut.getCharacters("rick", page: 2)
+        #expect(dataSource.getCharactersCallCount == 2)
+
+        _ = try await sut.getCharacters("rick", page: 1)
+        _ = try await sut.getCharacters("rick", page: 2)
+        #expect(dataSource.getCharactersCallCount == 2)
     }
 }
