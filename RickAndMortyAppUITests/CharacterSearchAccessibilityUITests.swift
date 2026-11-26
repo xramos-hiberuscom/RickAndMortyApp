@@ -35,6 +35,15 @@ final class CharacterSearchAccessibilityUITests: XCTestCase {
         searchField.typeText(text)
     }
 
+    /// Submits the search with the return key, which hides the software keyboard.
+    /// Typing is more robust than tapping the key button, which may not be hittable (hardware keyboard, layout).
+    /// With a hardware keyboard connected there is no software keyboard, so there is nothing to do.
+    private func dismissKeyboard() {
+        guard app.keyboards.firstMatch.exists else { return }
+        app.searchFields.firstMatch.typeText("\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Keyboard was not dismissed")
+    }
+
     // MARK: - Tests
 
     func testSearchFieldIsAccessible() {
@@ -119,6 +128,9 @@ final class CharacterSearchAccessibilityUITests: XCTestCase {
         launch()
         search("rick")
         XCTAssertTrue(element("character-row-1").waitForExistence(timeout: 5))
+
+        // Dismiss the system keyboard: its keys are not ours to audit.
+        dismissKeyboard()
 
         try app.performAccessibilityAudit(for: [.sufficientElementDescription, .hitRegion, .trait]) { issue in
             // The system search field's "Clear text" button is 20pt; it is UIKit's, not ours.
