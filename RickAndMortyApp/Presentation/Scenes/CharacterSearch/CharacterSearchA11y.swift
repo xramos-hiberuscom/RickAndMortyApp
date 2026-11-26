@@ -15,6 +15,9 @@ struct CharacterSearchA11y {
     }
 
     static let loading = "Searching characters"
+    static let loadingMore = "Loading more characters"
+    static let loadingMoreIdentifier = "characters-loading-more"
+    static let retryIdentifier = "characters-load-more-retry"
     static let rowHint = "Shows character details"
 
     static func resultsAnnouncement(count: Int) -> String {

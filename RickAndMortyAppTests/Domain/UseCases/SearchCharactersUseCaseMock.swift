@@ -10,16 +10,23 @@ import Foundation
 /// It deliberately ignores cancellation, simulating a request that still completes.
 final class SearchCharactersUseCaseMock: SearchCharactersUseCaseContract {
     private(set) var requestedNames: [String] = []
-    private var pending: [String: CheckedContinuation<[Character], Error>] = [:]
+    private(set) var requestedPages: [Int] = []
+    private var pending: [String: CheckedContinuation<CharactersPage, Error>] = [:]
 
-    func execute(name: String) async throws -> [Character] {
+    private func key(_ name: String, _ page: Int) -> String { "\(name)#\(page)" }
+
+    func execute(name: String, page: Int) async throws -> CharactersPage {
         requestedNames.append(name)
-        return try await withCheckedThrowingContinuation { pending[name] = $0 }
+        requestedPages.append(page)
+        return try await withCheckedThrowingContinuation { pending[key(name, page)] = $0 }
     }
 
-    func isPending(_ name: String) -> Bool { pending[name] != nil }
+    func isPending(_ name: String, page: Int = 1) -> Bool { pending[key(name, page)] != nil }
 
-    func resolve(_ name: String, with result: Result<[Character], Error>) {
-        pending.removeValue(forKey: name)?.resume(with: result)
+    /// Resolves the pending call for `name` and `page`. `hasNextPage` tells whether more pages follow.
+    func resolve(_ name: String, page: Int = 1, hasNextPage: Bool = false, with result: Result<[Character], Error>) {
+        pending.removeValue(forKey: key(name, page))?.resume(with: result.map {
+            CharactersPage(characters: $0, page: page, hasNextPage: hasNextPage)
+        })
     }
 }

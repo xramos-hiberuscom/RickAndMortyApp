@@ -14,6 +14,8 @@ SwiftUI app to search characters of *Rick and Morty* and see their detail. Runs 
 3. Tap a character to open its **detail**: photo, status (green = Alive, red = Dead, gray = Unknown), species and gender.
 4. Go back to return to your results.
 
+Scroll to the bottom of the list and the next page loads automatically (infinite scroll). If loading more fails, the list stays and a **Retry** button appears at the end. A page with no new results is not an error: loading simply stops.
+
 Search states: an explanation when the field is empty, a progress indicator while loading, the list, "No Results" when nothing matches, and an error message otherwise. The detail screen also offers **Retry** on errors.
 
 ### Running the tests
@@ -32,7 +34,7 @@ xcodebuild test -project RickAndMortyApp.xcodeproj -scheme RickAndMortyApp \
 
 | Endpoint | Used for |
 |---|---|
-| `GET /character?name=<text>` | Search. Returns a paginated envelope (`info`, `results`). Only the first page is used. |
+| `GET /character?name=<text>` | Search. Returns a paginated envelope (`info`, `results`). Pages of 20, requested with `&page=N`; `info.pages` tells how many exist. |
 | `GET /character/{id}` | Detail of one character. |
 
 When a search has no matches the API answers **404**. The app treats this as "no results", not as an error.
@@ -74,7 +76,7 @@ RickAndMortyApp/
 
 **Search results** (`TimedCache`, used by `CharacterRepository`):
 
-- Cached **per query** for **2 minutes** (`CharacterRepository.searchCacheTTL`).
+- Cached **per query and page** for **2 minutes** (`CharacterRepository.searchCacheTTL`).
 - While an entry is valid it is returned **without a network call**. When it has expired, the data is fetched again and the entry is replaced.
 - The key is the query trimmed and lowercased, so `rick`, `RICK` and ` rick ` share one entry.
 - Empty results are cached (a repeated search with no matches does not hit the API). **Errors are not cached**, so the next attempt goes to the network.
@@ -86,6 +88,14 @@ RickAndMortyApp/
 - Two levels: `NSCache` in memory (decoded images, evicted by the system under memory pressure) and `URLCache` on disk (20 MB memory / 100 MB disk), so images also survive relaunches.
 - An image already in memory is shown immediately, with no placeholder flash when scrolling or navigating back.
 
+## Pagination
+
+- The repository returns a `CharactersPage` (characters, page number, `hasNextPage`); `hasNextPage` is `page < info.pages`.
+- `CharacterSearchViewModel` keeps the next page to request. When the **last loaded row appears**, `loadMoreIfNeeded` fetches it and **appends** it. Only one extra page loads at a time.
+- **A page without new results is not an error.** A 404 (mapped to an empty page), an empty page, or a page with only characters already shown ends pagination silently: no message, no retry button, no further requests.
+- Only real failures (network down, 5xx) keep the list and show "Couldn't load more characters." with a **Retry** button.
+- Every page goes through the same cache (key = query + page).
+
 ## Task cancellation
 
 Search happens while the user types, so older requests must never overwrite newer ones (`CharacterSearchViewModel`):
@@ -95,6 +105,7 @@ Search happens while the user types, so older requests must never overwrite newe
 3. After the `await` on the use case, `Task.checkCancellation()` runs **before** publishing. A request that finishes after being cancelled therefore never reaches the UI, even if its network call could not be interrupted in time.
 4. `CancellationError` and `URLError.cancelled` (mapped to `NetworkError.transport(.cancelled)`) are treated as "superseded", not as errors, so no error screen flashes.
 5. An empty query cancels the current search and returns to the idle state.
+6. A **new search also cancels any page still loading** and resets pagination, so a late page of an old query is never appended to the new results.
 
 On the detail screen the load runs in SwiftUI's `.task`, which cancels it automatically when the view disappears.
 

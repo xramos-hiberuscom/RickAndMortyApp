@@ -42,17 +42,30 @@ private enum UITestData {
         Character(id: 2, name: "Morty Smith", status: .alive, species: "Human", gender: .male, image: ""),
         Character(id: 3, name: "Birdperson", status: .dead, species: "Bird-Person", gender: .male, image: "")
     ]
+
+    /// 45 characters (ids 100...144) matched by the query "gherkin", to exercise pagination (3 pages).
+    static let gherkins = (0..<45).map {
+        Character(id: 100 + $0, name: "Gherkin \($0)", status: .alive, species: "Pickle", gender: .male, image: "")
+    }
+    static let pageSize = 20
 }
 
 private struct UITestSearchCharactersUseCase: SearchCharactersUseCaseContract {
-    func execute(name: String) async throws -> [Character] {
-        UITestData.characters.filter { $0.name.localizedCaseInsensitiveContains(name) }
+    func execute(name: String, page: Int) async throws -> CharactersPage {
+        let matches = (UITestData.characters + UITestData.gherkins)
+            .filter { $0.name.localizedCaseInsensitiveContains(name) }
+        let size = UITestData.pageSize
+        let start = min((page - 1) * size, matches.count)
+        let end = min(start + size, matches.count)
+        return CharactersPage(characters: Array(matches[start..<end]),
+                              page: page,
+                              hasNextPage: end < matches.count)
     }
 }
 
 private struct UITestGetCharacterUseCase: GetCharacterUseCaseContract {
     func execute(id: Int) async throws -> Character? {
-        UITestData.characters.first { $0.id == id }
+        (UITestData.characters + UITestData.gherkins).first { $0.id == id }
     }
 }
 #endif
